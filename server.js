@@ -1,28 +1,26 @@
-// const mongoose = require('mongoose');
-// require('dotenv')
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import express from 'express';
-// import User from './model/user';
-import User from './model/user.js'; // remember to add .js when importing. Learnt the hard way
+import cors from 'cors';
+import User from './model/user.js';
 import router from './routes/authRoutes.js';
 
+dotenv.config(); // Load env variables first
 
-dotenv.config();
+const app = express(); // ✅ Define app early
 
-const app = express();
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-const MONGODB_URI = process.env.MONGODB_URI; // to hide the env file later
-const PORT = process.env.PORT; // variable that contains the port when it's run loaded from the env file
-
-app.use(express.json()); // middleware..
+// Routes
 app.use('/api/auth', router);
 
+// Temporary user registration route
 app.post('/api/users', async (req, res) => {
   const { email, password } = req.body;
 
-    console.log('📥 Incoming data:', req.body); // Debug line
-
+  console.log('📥 Incoming data:', req.body); // Debug
 
   try {
     const newUser = new User({ email, password });
@@ -34,33 +32,22 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
+// Connect to DB and Start Server
+const MONGODB_URI = process.env.MONGODB_URI;
+const PORT = process.env.PORT || 5000; // ✅ Provide fallback
+
 const connectToDB = async () => {
   try {
     await mongoose.connect(MONGODB_URI);
-
     console.log('Connected to MongoDB!');
 
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}!`);
+      console.log(`Server is running on port ${PORT}`);
     });
-
   } catch (error) {
-    console.error('Error saving user:', error);
-    res.status(400).json({ error: error.message });
+    console.error('Failed to connect to MongoDB:', error.message);
+
   }
 };
 
-//note-- always add an application/json as content type in Insomnia!
-
 connectToDB();
-
-
-
-
-
-
-
-
-
-
-
