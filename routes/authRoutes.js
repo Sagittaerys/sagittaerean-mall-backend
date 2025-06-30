@@ -5,9 +5,17 @@ import jwt from 'jsonwebtoken';
 // import User from '../model/user';
 import User from '../model/user.js';
 import protect from '../middleware/authMiddleware.js';
+import verifyToken from '../middleware/verifyToken.js';
+import dotenv from 'dotenv';
 
 
 const router = express.Router();
+
+
+dotenv.config(); // Load env variables first
+
+
+const PORT = process.env.PORT || 4000;
 
 //in this scenario since the routes is to register.... we'll create a registration route!
 
@@ -34,6 +42,7 @@ router.post('/register', async (req, res) => {
     // Create new user
     const newUser = new User({
       email,
+      name,
       password: hashedPassword, // NEVER save plain password
     });
 
@@ -42,7 +51,7 @@ router.post('/register', async (req, res) => {
     // Create JWT token
     const token = jwt.sign(
       { id: newUser._id, email: newUser.email, role: newUser.role },
-      process.env.JWT_SECRET,
+      PORT,
       { expiresIn: '1h' }
     );
 
@@ -52,6 +61,7 @@ router.post('/register', async (req, res) => {
       token,
       user: {
         id: newUser._id,
+        name: newUser.name,
         email: newUser.email,
         role: newUser.role,
       }
@@ -93,7 +103,7 @@ router.post('/login', async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
+      PORT,
       { expiresIn: '1h' }
     );
 
@@ -133,5 +143,39 @@ router.get('/profile', protect, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 })
+
+//add to cart route
+router.post("/cart", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id; // pulled from the token in middleware
+    const cartItem = req.body;
+
+    const newCartItem = new Cart({
+      userId,
+      ...cartItem,
+    });
+
+    await newCartItem.save();
+
+    res.status(201).json({ message: "Cart item saved!", cart: newCartItem });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//logged in user cart
+// 
+router.get("/cart", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const cartItems = await Cart.find({ userId });
+    res.status(200).json(cartItems);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 
 export default router;
