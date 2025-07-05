@@ -1,62 +1,54 @@
 import express from 'express';
-// import bcrypt from 'bcrypt';
-import bcrypt from 'bcryptjs'
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-// import User from '../model/user';
+import dotenv from 'dotenv';
+
 import User from '../model/user.js';
+import Cart from '../model/cart.js';
 import protect from '../middleware/authMiddleware.js';
 import verifyToken from '../middleware/verifyToken.js';
-import dotenv from 'dotenv';
-import Cart from '../model/cart.js';
 
+dotenv.config(); // Load environment variables
 
 const router = express.Router();
-
-
-dotenv.config(); // Load env variables first
-
-
+const JWT_SECRET = process.env.JWT_SECRET; 
 const PORT = process.env.PORT || 4000;
 
-//in this scenario since the routes is to register.... we'll create a registration route!
-
-// routes/authRoutes.js
-
+// ---------------------- REGISTER ----------------------
 router.post('/register', async (req, res) => {
-  const {name, email, password } = req.body;
+  const { name, email, password } = req.body;
 
-  //Validate input
-  if (!email || !password) {
+  if (!email || !password || !name) {
     return res.status(400).json({ error: 'All fields are required!' });
   }
 
   try {
-    // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already in use!' });
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10); 
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
     const newUser = new User({
-      email,
       name,
-      password: hashedPassword, // NEVER save plain password
+      email,
+      password: hashedPassword,
     });
 
     await newUser.save();
 
-    // Create JWT token
     const token = jwt.sign(
-      { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
-      PORT,
+      {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+      },
+      JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Respond with token and user info
     res.status(201).json({
       message: 'User registered successfully',
       token,
@@ -65,72 +57,59 @@ router.post('/register', async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-      }
+      },
     });
-
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Server error during registration' });
   }
-}
+});
 
-);
-// Working! -- Registration 
-
-//Login Route
-
+// ---------------------- LOGIN ----------------------
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Input Validation
   if (!email || !password) {
     return res.status(400).json({ error: 'All fields are required!' });
   }
 
   try {
-    // Check if user exists
     const user = await User.findOne({ email });
 
-    if (!user) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Invalid email or password!' });
     }
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password!' });
-    }
-
-    // Generate JWT
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      PORT,
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Final response
     res.status(200).json({
       message: `Welcome Back, ${email}`,
       token,
       user: {
         id: user._id,
+        name: user.name,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error during login' });
   }
-}
-); 
-//profile route 
+});
 
+// ---------------------- PROFILE ----------------------
 router.get('/profile', protect, async (req, res) => {
-
   try {
-    const user = await User.findById(req.user.id).select('-password'); // Exclude password
+    const user = await User.findById(req.user.id).select('-password');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -138,17 +117,17 @@ router.get('/profile', protect, async (req, res) => {
 
     res.status(200).json({
       message: 'Welcome To Your Profile',
-      user
+      user,
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
-})
+});
 
-//add to cart route
-router.post("/cart", verifyToken, async (req, res) => {
+// ---------------------- ADD TO CART ----------------------
+router.post('/cart', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id; // pulled from the token in middleware
+    const userId = req.user.id;
     const cartItem = req.body;
 
     const newCartItem = new Cart({
@@ -158,15 +137,14 @@ router.post("/cart", verifyToken, async (req, res) => {
 
     await newCartItem.save();
 
-    res.status(201).json({ message: "Cart item saved!", cart: newCartItem });
+    res.status(201).json({ message: 'Cart item saved!', cart: newCartItem });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-//logged in user cart
-// 
-router.get("/cart", verifyToken, async (req, res) => {
+// ---------------------- GET USER CART ----------------------
+router.get('/cart', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const cartItems = await Cart.find({ userId });
@@ -175,8 +153,5 @@ router.get("/cart", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
-
 
 export default router;
