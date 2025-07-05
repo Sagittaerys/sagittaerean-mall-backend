@@ -7,6 +7,7 @@ import User from '../model/user.js';
 import protect from '../middleware/authMiddleware.js';
 import verifyToken from '../middleware/verifyToken.js';
 import dotenv from 'dotenv';
+import Cart from '../model/cart.js';
 
 
 const router = express.Router();
@@ -22,7 +23,7 @@ const PORT = process.env.PORT || 4000;
 // routes/authRoutes.js
 
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const {name, email, password } = req.body;
 
   //Validate input
   if (!email || !password) {
@@ -50,7 +51,7 @@ router.post('/register', async (req, res) => {
 
     // Create JWT token
     const token = jwt.sign(
-      { id: newUser._id, email: newUser.email, role: newUser.role },
+      { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
       PORT,
       { expiresIn: '1h' }
     );
