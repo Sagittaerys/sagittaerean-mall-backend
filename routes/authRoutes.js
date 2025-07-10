@@ -125,21 +125,28 @@ router.get('/profile', protect, async (req, res) => {
 });
 
 // ---------------------- ADD TO CART ----------------------
-router.post('/cart', verifyToken, async (req, res) => {
+router.post("/cart", verifyToken, async (req, res) => {
+  const { productId, name, image, price, quantity, brand } = req.body;
+
   try {
     const userId = req.user.id;
-    const cartItem = req.body;
 
-    const newCartItem = new Cart({
+    const cartItem = new Cart({
       userId,
-      ...cartItem,
+      productId,
+      name,
+      image,
+      price,
+      quantity,
+      brand,
     });
 
-    await newCartItem.save();
+    await cartItem.save();
 
-    res.status(201).json({ message: 'Cart item saved!', cart: newCartItem });
+    res.status(200).json({ message: "Item added to cart", cart: cartItem });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error saving cart item:", err.message);
+    res.status(500).json({ message: "Failed to save cart item" });
   }
 });
 
