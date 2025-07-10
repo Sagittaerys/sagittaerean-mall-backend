@@ -126,27 +126,23 @@ router.get('/profile', protect, async (req, res) => {
 
 // ---------------------- ADD TO CART ----------------------
 router.post("/cart", verifyToken, async (req, res) => {
-  const { productId, name, image, price, quantity, brand } = req.body;
-
   try {
-    const userId = req.user.id;
-
-    const cartItem = new Cart({
-      userId,
-      productId,
-      name,
-      image,
-      price,
-      quantity,
-      brand,
+    const newCartItem = new Cart({
+      userId: req.user.id,
+      productId: req.body.productId,
+      name: req.body.name,
+      image: req.body.image,
+      price: req.body.price,
+      quantity: req.body.quantity || 1,
+      brand: req.body.brand
     });
 
-    await cartItem.save();
+    await newCartItem.save();
 
-    res.status(200).json({ message: "Item added to cart", cart: cartItem });
+    res.status(201).json({ message: "Item added to cart", cart: newCartItem });
   } catch (err) {
-    console.error("Error saving cart item:", err.message);
-    res.status(500).json({ message: "Failed to save cart item" });
+    console.error("Failed to save cart:", err.message);
+    res.status(500).json({ message: "Error saving to cart" });
   }
 });
 
