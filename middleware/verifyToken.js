@@ -19,6 +19,8 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT);
+    console.log("Decoded JWT:", decoded);
+    
     req.user = decoded; // Attach decoded payload to request
     next();
   } catch (error) {

@@ -156,6 +156,7 @@ router.get('/cart', verifyToken, async (req, res) => {
 
 
 //delete
+// server-side
 router.delete("/cart/:productId", verifyToken, async (req, res) => {
   const { productId } = req.params;
   const userId = req.user.id;
@@ -170,6 +171,7 @@ router.delete("/cart/:productId", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Error removing item" });
   }
 });
+
 
 
 export default router;
