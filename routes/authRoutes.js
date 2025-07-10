@@ -156,19 +156,27 @@ router.get('/cart', verifyToken, async (req, res) => {
 
 
 //delete
-// server-side
+
+
+
 router.delete("/cart/:productId", verifyToken, async (req, res) => {
   const { productId } = req.params;
   const userId = req.user.id;
 
   try {
-    const user = await User.findById(userId);
-    user.cart = user.cart.filter(item => item.productId !== productId);
-    await user.save();
+    const deleted = await Cart.findOneAndDelete({
+      userId,
+      productId,
+    });
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Item not found in cart" });
+    }
 
     res.status(200).json({ message: "Item removed from cart" });
   } catch (err) {
-    res.status(500).json({ message: "Error removing item" });
+    console.error("Error removing from cart:", err);
+    res.status(500).json({ message: "Error removing item", error: err.message });
   }
 });
 
