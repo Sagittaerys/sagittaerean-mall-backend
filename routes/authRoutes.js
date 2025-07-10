@@ -162,22 +162,19 @@ router.get('/cart', verifyToken, async (req, res) => {
 
 
 
-router.delete("/cart/:productId", verifyToken, async (req, res) => {
-  const userId = req.user.id;
-  const { productId } = req.params;
+router.delete("/cart/item/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
 
-  try {
-    const deletedItem = await Cart.findOneAndDelete({ userId, productId });
+  const deletedItem = await Cart.findOneAndDelete({
+    _id: id,
+    userId: req.user.id,
+  });
 
-    if (!deletedItem) {
-      return res.status(404).json({ message: "Item not found in cart" });
-    }
-
-    res.status(200).json({ message: "Item removed from cart" });
-  } catch (err) {
-    console.error("Error deleting item:", err.message);
-    res.status(500).json({ message: "Error removing item" });
+  if (!deletedItem) {
+    return res.status(404).json({ message: "Item not found in cart" });
   }
+
+  res.status(200).json({ message: "Item removed" });
 });
 
 
