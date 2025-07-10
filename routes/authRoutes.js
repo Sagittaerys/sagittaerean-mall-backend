@@ -154,4 +154,22 @@ router.get('/cart', verifyToken, async (req, res) => {
   }
 });
 
+
+//delete
+router.delete("/cart/:productId", verifyToken, async (req, res) => {
+  const { productId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const user = await User.findById(userId);
+    user.cart = user.cart.filter(item => item.productId !== productId);
+    await user.save();
+
+    res.status(200).json({ message: "Item removed from cart" });
+  } catch (err) {
+    res.status(500).json({ message: "Error removing item" });
+  }
+});
+
+
 export default router;

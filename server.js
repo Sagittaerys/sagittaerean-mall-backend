@@ -11,6 +11,7 @@ const app = express(); // ✅ Define app early
 
 // Middleware
 app.use(cors());
+
 app.use(express.json());
 
 // Routes
