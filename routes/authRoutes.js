@@ -163,26 +163,22 @@ router.get('/cart', verifyToken, async (req, res) => {
 
 
 router.delete("/cart/:productId", verifyToken, async (req, res) => {
-  const { productId } = req.params;
   const userId = req.user.id;
+  const { productId } = req.params;
 
   try {
-    const deleted = await Cart.findOneAndDelete({
-      userId,
-      productId,
-    });
+    const deletedItem = await Cart.findOneAndDelete({ userId, productId });
 
-    if (!deleted) {
+    if (!deletedItem) {
       return res.status(404).json({ message: "Item not found in cart" });
     }
 
     res.status(200).json({ message: "Item removed from cart" });
   } catch (err) {
-    console.error("Error removing from cart:", err);
-    res.status(500).json({ message: "Error removing item", error: err.message });
+    console.error("Error deleting item:", err.message);
+    res.status(500).json({ message: "Error removing item" });
   }
 });
-
 
 
 export default router;
